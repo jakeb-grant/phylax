@@ -16,13 +16,13 @@ impl SystemConfig {
     pub fn from_file() -> Result<Self> {
         let mut fig = Figment::new();
         // Prioritize configuration in local, as semantically that is the users config
-        if Path::new("/usr/local/etc/soteria/config.toml").exists() {
-            fig = fig.merge(Toml::file_exact("/usr/local/etc/soteria/config.toml"));
-            tracing::info!("using configuration file found at /usr/local/etc/soteria/config.toml");
+        if Path::new("/usr/local/etc/phylax/config.toml").exists() {
+            fig = fig.merge(Toml::file_exact("/usr/local/etc/phylax/config.toml"));
+            tracing::info!("using configuration file found at /usr/local/etc/phylax/config.toml");
         // Try the configuration location of the distro
-        } else if Path::new("/etc/soteria/config.toml").exists() {
-            fig = fig.merge(Toml::file_exact("/etc/soteria/config.toml"));
-            tracing::info!("using configuration file found at /etc/soteria/config.toml");
+        } else if Path::new("/etc/phylax/config.toml").exists() {
+            fig = fig.merge(Toml::file_exact("/etc/phylax/config.toml"));
+            tracing::info!("using configuration file found at /etc/phylax/config.toml");
         // Fall back to default
         } else {
             fig = fig.merge(Serialized::defaults(Self::default()));

@@ -1,4 +1,3 @@
-use gettextrs::gettext;
 use std::{collections::HashMap, process::Stdio};
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
@@ -131,7 +130,7 @@ impl AuthenticationAgent {
                             if let Some(sliced) = line.strip_prefix("PAM_PROMPT_ECHO_OFF") {
                                 tracing::debug!("recieved request from helper: '{}'", sliced);
                                 if sliced.trim() == "Password:" {
-                                    tracing::debug!(pw = pw);
+                                    tracing::debug!("sending password to helper");
                                     stdin.write_all(pw.as_bytes()).await?;
                                     stdin.write_all(b"\n").await?;
                                 }
@@ -153,7 +152,7 @@ impl AuthenticationAgent {
                                 tracing::debug!("helper replied with failure.");
 
                                 let retry_msg = last_info.clone().unwrap_or_else(|| {
-                                    gettext("Authentication failed. Please try again.")
+                                    "Authentication failed. Please try again.".to_string()
                                 });
                                 self.sender
                                     .send(AuthenticationAgentEvent::AuthorizationRetry {

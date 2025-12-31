@@ -21,8 +21,6 @@ mod dbus;
 mod events;
 mod ui;
 
-use gettextrs::{bindtextdomain, textdomain};
-
 fn setup_tracing() -> Result<()> {
     let subscriber = tracing_subscriber::fmt()
         .with_target(false)
@@ -42,18 +40,10 @@ fn setup_tracing() -> Result<()> {
 async fn main() -> Result<()> {
     setup_tracing()?;
 
-    gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
-
-    let locale_path =
-        std::env::var("SOTERIA_LOCALEDIR").unwrap_or_else(|_| "/usr/share/locale".to_string());
-
-    bindtextdomain("soteria", &locale_path)?;
-    textdomain("soteria")?;
-
     let config_path = std::env::var("XDG_CONFIG_HOME")
         .or(std::env::var("HOME").map(|e| e + "/.config"))
         .context("Could not resolve configuration path")?;
-    let css_path = format!("{config_path}/soteria/style.css");
+    let css_path = format!("{config_path}/phylax/style.css");
     let path = Path::new(&css_path);
 
     let config: SystemConfig = SystemConfig::from_file()?;
@@ -97,7 +87,7 @@ async fn main() -> Result<()> {
 
     tracing::info!("Registered as authentication provider.");
 
-    let app = RelmApp::new("gay.vaskel.soteria");
+    let app = RelmApp::new("io.github.jakebgrant.phylax");
     if path.is_file() {
         tracing::info!("loading css stylesheet from {}", css_path);
         relm4::set_global_css_from_file(path)
