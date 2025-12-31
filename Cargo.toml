@@ -1,12 +1,12 @@
 [package]
-name = "soteria"
-version = "0.2.2"
-authors = ["Vaskel"]
+name = "phylax"
+version = "0.1.0"
+authors = ["Jake Grant"]
 edition = "2024"
 rust-version = "1.85"
-description = "Soteria is a Polkit authentication agent written in GTK"
+description = "Phylax is a Polkit authentication agent written in GTK"
 readme = "README.md"
-repository = "https://github.com/imvaskel/soteria"
+repository = "https://github.com/jakeb-grant/phylax"
 license = "Apache-2.0"
 
 [dependencies]
