@@ -52,8 +52,12 @@ async fn main() -> Result<()> {
     let (agent_sender, agent_receiver) = channel::<AuthenticationAgentEvent>(32);
     let (user_sender, user_receiver) = channel::<AuthenticationUserEvent>(32);
 
+    // Must persist for app lifetime to keep D-Bus agent alive
+    let _connection: Option<zbus::Connection>;
+
     if demo_mode {
         tracing::info!("Running in demo mode");
+        _connection = None;
         agent_sender
             .send(AuthenticationAgentEvent::Started {
                 cookie: "demo".to_string(),
@@ -89,12 +93,14 @@ async fn main() -> Result<()> {
         let subject = Subject::new(subject_kind, subject_details);
 
         let agent = AuthenticationAgent::new(agent_sender, user_receiver, config.clone());
-        let connection = conn::Builder::system()?
-            .serve_at(constants::SELF_OBJECT_PATH, agent)?
-            .build()
-            .await?;
+        _connection = Some(
+            conn::Builder::system()?
+                .serve_at(constants::SELF_OBJECT_PATH, agent)?
+                .build()
+                .await?,
+        );
 
-        let proxy = AuthorityProxy::new(&connection).await?;
+        let proxy = AuthorityProxy::new(_connection.as_ref().unwrap()).await?;
         proxy
             .register_authentication_agent(&subject, &locale, constants::SELF_OBJECT_PATH)
             .await?;
