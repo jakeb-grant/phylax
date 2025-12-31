@@ -1,4 +1,4 @@
-# Maintainer: Jake Grant <jake@jakebgrant.com>
+# Maintainer: jakeb-grant
 pkgname=phylax-git
 pkgver=r0.0000000
 pkgrel=1
