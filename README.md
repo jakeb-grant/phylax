@@ -83,16 +83,34 @@ helper_path = "/usr/lib/polkit-1/polkit-agent-helper-1"
 
 ### style.css
 
-Custom GTK4 styling for the authentication dialog:
+Custom GTK4 styling for the authentication dialog. CSS is hot-reloaded each time the dialog appears.
 
-```css
-window {
-    background-color: #1e1e2e;
-}
+#### Available CSS Classes
 
-button {
-    border-radius: 8px;
-}
+| Class | Element |
+|-------|---------|
+| `.auth-window` | Main window |
+| `.auth-container` | Outer container |
+| `.auth-header` | "Authentication Required" title |
+| `.auth-message` | Polkit message |
+| `.auth-retry` | Error/retry text |
+| `.auth-identity-box` | Dropdown wrapper |
+| `.auth-identity` | User dropdown |
+| `.auth-password` | Password entry |
+| `.auth-buttons` | Button container |
+| `.auth-cancel` | Cancel button |
+| `.auth-confirm` | Confirm button |
+
+#### Example
+
+See [examples/catppuccin-mocha.css](examples/catppuccin-mocha.css) for a complete theme.
+
+#### Demo Mode
+
+To preview styling without triggering a real authentication:
+
+```bash
+PHYLAX_DEMO=1 phylax
 ```
 
 ## License

@@ -40,6 +40,7 @@ impl AsyncComponent for App {
 
     view! {
         gtk::Window {
+            add_css_class: "auth-window",
             set_title: Some("Authorize"),
             set_default_height: 250,
             set_default_width: 450,
@@ -59,11 +60,13 @@ impl AsyncComponent for App {
             },
 
             gtk::Box {
+                add_css_class: "auth-container",
                 set_margin_end: 56,
                 set_margin_start: 56,
                 set_orientation: gtk::Orientation::Vertical,
 
                 gtk::Label {
+                    add_css_class: "auth-header",
                     set_markup: r#"<b><span size='x-large'>Authentication Required</span></b>"#,
                     set_margin_horizontal: 16,
                     set_margin_vertical: 16,
@@ -73,6 +76,7 @@ impl AsyncComponent for App {
                 },
 
                 gtk::Label {
+                    add_css_class: "auth-message",
                     #[watch]
                     set_label: &model.message,
                     set_single_line_mode: true,
@@ -82,6 +86,7 @@ impl AsyncComponent for App {
                 },
 
                 gtk::Label {
+                    add_css_class: "auth-retry",
                     #[watch]
                     set_label: &if let Some(retry_message) = model.retry_message.clone() {
                         retry_message.to_string()
@@ -96,11 +101,13 @@ impl AsyncComponent for App {
                 },
 
                 gtk::Box {
+                    add_css_class: "auth-identity-box",
                     set_baseline_position: gtk::BaselinePosition::Center,
                     set_spacing: 18,
 
                     #[name = "identity_dropdown"]
                     gtk::DropDown {
+                        add_css_class: "auth-identity",
                         set_margin_bottom: 8,
                         set_hexpand: true,
                         #[watch]
@@ -110,6 +117,7 @@ impl AsyncComponent for App {
 
                 #[name = "password_entry"]
                 gtk::PasswordEntry {
+                    add_css_class: "auth-password",
                     set_hexpand: true,
                     set_placeholder_text: Some("Password"),
                     set_show_peek_icon: true,
@@ -122,6 +130,7 @@ impl AsyncComponent for App {
                 },
 
                 gtk::FlowBox {
+                    add_css_class: "auth-buttons",
                     set_hexpand: true,
                     set_homogeneous: true,
                     set_margin_bottom: 16,
@@ -132,6 +141,7 @@ impl AsyncComponent for App {
 
                     #[name = "cancel_button"]
                     append = &gtk::Button::with_label("Cancel"){
+                        add_css_class: "auth-cancel",
                         connect_clicked[sender, password_entry] => move |_| {
 
                             sender.input(AppMsg::Cancel);
@@ -141,6 +151,7 @@ impl AsyncComponent for App {
 
                     #[name = "confirm_button"]
                     append = &gtk::Button::with_label("Confirm") {
+                        add_css_class: "auth-confirm",
                         connect_clicked[sender, identity_dropdown, password_entry] => move |_| {
                             if let Some(item) = identity_dropdown.selected_item() {
                                 let user: gtk::StringObject = item.dynamic_cast().unwrap();

@@ -1,0 +1,73 @@
+/* Catppuccin Mocha theme for Phylax */
+
+/* Window */
+.auth-window {
+    background-color: #1e1e2e;
+}
+
+/* Typography */
+.auth-header {
+    color: #cdd6f4;
+    font-weight: bold;
+}
+
+.auth-message {
+    color: #bac2de;
+}
+
+.auth-retry {
+    color: #f38ba8;
+}
+
+/* Identity dropdown */
+dropdown.auth-identity > button.toggle {
+    background: none;
+    background-color: #313244;
+    border-color: #45475a;
+    border-radius: 8px;
+    color: #cdd6f4;
+}
+
+dropdown.auth-identity > popover.menu > contents,
+dropdown.auth-identity listview {
+    background-color: #313244;
+    border-color: #45475a;
+}
+
+dropdown.auth-identity listview > row:hover,
+dropdown.auth-identity listview > row:selected {
+    background-color: #45475a;
+}
+
+dropdown.auth-identity listview > row:focus:not(:hover) {
+    background-color: transparent;
+}
+
+/* Password entry */
+.auth-password {
+    background: #313244;
+    border-color: #45475a;
+    border-radius: 8px;
+    color: #cdd6f4;
+}
+
+entry.auth-password:focus-within {
+    outline-color: #89b4fa;
+}
+
+/* Buttons */
+.auth-buttons {
+    margin-top: 4px;
+}
+
+.auth-cancel,
+.auth-confirm {
+    background: #313244;
+    border-color: #45475a;
+    color: #cdd6f4;
+}
+
+.auth-cancel:hover,
+.auth-confirm:hover {
+    background: #45475a;
+}
