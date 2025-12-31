@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use gtk::prelude::*;
 use gtk4::{
     glib::{clone, spawn_future_local},
@@ -32,6 +34,7 @@ impl AsyncComponent for App {
     type Init = (
         mpsc::Sender<AuthenticationUserEvent>,
         mpsc::Receiver<AuthenticationAgentEvent>,
+        PathBuf,
     );
     type CommandOutput = ();
 
@@ -46,7 +49,8 @@ impl AsyncComponent for App {
             #[watch]
             set_visible: model.cookie.is_some(),
 
-            connect_show[password_entry] => move |_| {
+            connect_show[password_entry, css_path] => move |_| {
+                let _ = relm4::set_global_css_from_file(&css_path);
                 password_entry.grab_focus();
             },
             connect_close_request[cancel_button] => move |_| {
@@ -156,10 +160,12 @@ impl AsyncComponent for App {
         root: Self::Root,
         sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
+        let (user_sender, agent_receiver, css_path) = init;
+
         let model = App {
             message: String::from(""),
             identities: Vec::new(),
-            sender: init.0,
+            sender: user_sender,
             cookie: None,
             authenticating: false,
             retry_message: None,
@@ -169,7 +175,7 @@ impl AsyncComponent for App {
             #[strong]
             sender,
             async move {
-                let mut receiver = init.1;
+                let mut receiver = agent_receiver;
                 loop {
                     let event = receiver.recv().await.expect("Somehow the channel closed");
                     tracing::debug!("recieved event {:#?}", event);

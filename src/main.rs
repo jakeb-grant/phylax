@@ -93,7 +93,7 @@ async fn main() -> Result<()> {
         relm4::set_global_css_from_file(path)
             .context("Could not load CSS stylesheet for some reason")?;
     }
-    app.run_async::<App>((user_sender, agent_receiver));
+    app.run_async::<App>((user_sender, agent_receiver, path.to_path_buf()));
 
     Ok(())
 }
