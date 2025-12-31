@@ -1,7 +1,7 @@
 [package]
 name = "phylax"
 version = "0.1.0"
-authors = ["Jake Grant"]
+authors = ["Vaskel", "Jake Grant"]
 edition = "2024"
 rust-version = "1.85"
 description = "Phylax is a Polkit authentication agent written in GTK"
