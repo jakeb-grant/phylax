@@ -1,7 +1,15 @@
-/* Catppuccin Mocha theme for Phylax */
+/*
+ * Catppuccin Mocha theme for Phylax
+ *
+ * Note: GTK4/libadwaita themes use high-specificity selectors. To reliably
+ * override them, you may need more specific selectors like
+ * `window.auth-window.background` instead of just `.auth-window`.
+ * GTK CSS does not support `!important`.
+ */
 
 /* Window */
-.auth-window {
+window.auth-window.background,
+window.auth-window {
     background-color: #1e1e2e;
 }
 
