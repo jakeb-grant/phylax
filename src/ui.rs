@@ -138,11 +138,11 @@ impl AsyncComponent for App {
                     #[name = "confirm_button"]
                     append = &gtk::Button::with_label("Confirm") {
                         connect_clicked[sender, identity_dropdown, password_entry] => move |_| {
-                            let user: gtk::StringObject = identity_dropdown.selected_item().unwrap().dynamic_cast().unwrap();
-
-                            sender.input(AppMsg::Confirm { user: user.string().to_string(), password: password_entry.text().to_string()});
-                            password_entry.set_text("");
-
+                            if let Some(item) = identity_dropdown.selected_item() {
+                                let user: gtk::StringObject = item.dynamic_cast().unwrap();
+                                sender.input(AppMsg::Confirm { user: user.string().to_string(), password: password_entry.text().to_string()});
+                                password_entry.set_text("");
+                            }
                         }
                     }
                 }
