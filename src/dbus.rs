@@ -1,4 +1,3 @@
-use gettextrs::gettext;
 use std::{collections::HashMap, process::Stdio};
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
@@ -153,7 +152,7 @@ impl AuthenticationAgent {
                                 tracing::debug!("helper replied with failure.");
 
                                 let retry_msg = last_info.clone().unwrap_or_else(|| {
-                                    gettext("Authentication failed. Please try again.")
+                                    "Authentication failed. Please try again.".to_string()
                                 });
                                 self.sender
                                     .send(AuthenticationAgentEvent::AuthorizationRetry {

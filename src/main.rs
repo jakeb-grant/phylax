@@ -21,8 +21,6 @@ mod dbus;
 mod events;
 mod ui;
 
-use gettextrs::{bindtextdomain, textdomain};
-
 fn setup_tracing() -> Result<()> {
     let subscriber = tracing_subscriber::fmt()
         .with_target(false)
@@ -41,14 +39,6 @@ fn setup_tracing() -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     setup_tracing()?;
-
-    gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
-
-    let locale_path =
-        std::env::var("SOTERIA_LOCALEDIR").unwrap_or_else(|_| "/usr/share/locale".to_string());
-
-    bindtextdomain("soteria", &locale_path)?;
-    textdomain("soteria")?;
 
     let config_path = std::env::var("XDG_CONFIG_HOME")
         .or(std::env::var("HOME").map(|e| e + "/.config"))
