@@ -54,10 +54,13 @@ async fn main() -> Result<()> {
 
     // Must persist for app lifetime to keep D-Bus agent alive
     let _connection: Option<zbus::Connection>;
+    // Keep sender alive for app lifetime (clone before moving to agent)
+    let _agent_sender_keepalive: Option<tokio::sync::mpsc::Sender<AuthenticationAgentEvent>>;
 
     if demo_mode {
         tracing::info!("Running in demo mode");
         _connection = None;
+        _agent_sender_keepalive = Some(agent_sender.clone());
         agent_sender
             .send(AuthenticationAgentEvent::Started {
                 cookie: "demo".to_string(),
@@ -92,6 +95,7 @@ async fn main() -> Result<()> {
         )]);
         let subject = Subject::new(subject_kind, subject_details);
 
+        _agent_sender_keepalive = Some(agent_sender.clone());
         let agent = AuthenticationAgent::new(agent_sender, user_receiver, config.clone());
         _connection = Some(
             conn::Builder::system()?

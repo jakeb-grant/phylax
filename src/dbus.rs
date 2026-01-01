@@ -1,6 +1,7 @@
-use std::{collections::HashMap, process::Stdio};
+use std::{collections::HashMap, path::Path, process::Stdio};
 use tokio::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
+    net::UnixStream,
     process,
     sync::mpsc,
 };
@@ -11,6 +12,11 @@ use crate::{
     config::SystemConfig,
     events::{AuthenticationAgentEvent, AuthenticationUserEvent},
 };
+
+enum AuthResult {
+    Success,
+    Retry(String),
+}
 
 #[derive(Debug)]
 pub struct AuthenticationAgent {
@@ -30,6 +36,91 @@ impl AuthenticationAgent {
             receiver,
             config,
         }
+    }
+
+    async fn authenticate_via_socket(
+        &self,
+        socket_path: &str,
+        user: &str,
+        cookie: &str,
+        password: &str,
+    ) -> std::result::Result<AuthResult, Box<dyn std::error::Error + Send + Sync>> {
+        let stream = UnixStream::connect(socket_path).await?;
+        let (reader, mut writer) = stream.into_split();
+
+        // Socket protocol: send username first, then cookie
+        writer.write_all(user.as_bytes()).await?;
+        writer.write_all(b"\n").await?;
+        writer.write_all(cookie.as_bytes()).await?;
+        writer.write_all(b"\n").await?;
+
+        self.handle_pam_protocol(reader, writer, password).await
+    }
+
+    async fn authenticate_via_spawn(
+        &self,
+        user: &str,
+        cookie: &str,
+        password: &str,
+    ) -> std::result::Result<AuthResult, Box<dyn std::error::Error + Send + Sync>> {
+        let mut child = process::Command::new(self.config.get_helper_path())
+            .arg(user)
+            .env("LC_ALL", "C")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()?;
+
+        let stdin = child.stdin.take().ok_or("Child did not have stdin")?;
+        let stdout = child.stdout.take().ok_or("Child did not have stdout")?;
+
+        // Process protocol: just send cookie (username is passed as arg)
+        let mut writer = stdin;
+        writer.write_all(cookie.as_bytes()).await?;
+        writer.write_all(b"\n").await?;
+
+        self.handle_pam_protocol(stdout, writer, password).await
+    }
+
+    async fn handle_pam_protocol<R, W>(
+        &self,
+        reader: R,
+        mut writer: W,
+        password: &str,
+    ) -> std::result::Result<AuthResult, Box<dyn std::error::Error + Send + Sync>>
+    where
+        R: AsyncRead + Unpin,
+        W: AsyncWrite + Unpin,
+    {
+        let mut last_info: Option<String> = None;
+        let buf_reader = BufReader::new(reader);
+        let mut lines = buf_reader.lines();
+
+        while let Some(line) = lines.next_line().await? {
+            tracing::debug!("helper stdout: {}", line);
+
+            if let Some(sliced) = line.strip_prefix("PAM_PROMPT_ECHO_OFF") {
+                tracing::debug!("received request from helper: '{}'", sliced);
+                if sliced.trim() == "Password:" {
+                    tracing::debug!("sending password to helper");
+                    writer.write_all(password.as_bytes()).await?;
+                    writer.write_all(b"\n").await?;
+                }
+            } else if let Some(info) = line.strip_prefix("PAM_TEXT_INFO") {
+                let msg = info.trim().to_string();
+                tracing::debug!("helper replied with info: {}", msg);
+                last_info = Some(msg);
+            } else if line.starts_with("FAILURE") {
+                let retry_msg = last_info.unwrap_or_else(|| {
+                    "Authentication failed. Please try again.".to_string()
+                });
+                return Ok(AuthResult::Retry(retry_msg));
+            } else if line.starts_with("SUCCESS") {
+                return Ok(AuthResult::Success);
+            }
+        }
+
+        writer.flush().await?;
+        Ok(AuthResult::Retry("Authentication timed out.".to_string()))
     }
 }
 
@@ -98,73 +189,18 @@ impl AuthenticationAgent {
                     password: pw,
                 } => {
                     if c == cookie {
-                        let mut child = process::Command::new(self.config.get_helper_path())
-                            .arg(user)
-                            .env("LC_ALL", "C")
-                            .stdin(Stdio::piped())
-                            .stdout(Stdio::piped())
-                            .spawn()
-                            .map_err(|_| {
-                                PolkitError::Failed(
-                                    "Failed to the spawn polkit authentication helper.".to_string(),
-                                )
-                            })?;
+                        let socket_path = self.config.get_socket_path();
+                        let auth_result = if Path::new(socket_path).exists() {
+                            tracing::debug!("using socket-based authentication at {}", socket_path);
+                            self.authenticate_via_socket(socket_path, user, cookie, pw).await
+                        } else {
+                            tracing::debug!("socket not found, falling back to direct spawn");
+                            self.authenticate_via_spawn(user, cookie, pw).await
+                        };
 
-                        let mut stdin = child
-                            .stdin
-                            .take()
-                            .ok_or(PolkitError::Failed("Child did not have stdin.".to_string()))?;
-                        let stdout = child.stdout.take().ok_or(PolkitError::Failed(
-                            "Child did not have stdout.".to_string(),
-                        ))?;
-
-                        stdin.write_all(cookie.as_bytes()).await?;
-                        stdin.write_all(b"\n").await?;
-
-                        let mut last_info: Option<String> = None;
-
-                        let reader = BufReader::new(stdout);
-                        let mut lines = reader.lines();
-                        while let Some(line) = lines.next_line().await? {
-                            tracing::debug!("helper stdout: {}", line);
-                            if let Some(sliced) = line.strip_prefix("PAM_PROMPT_ECHO_OFF") {
-                                tracing::debug!("recieved request from helper: '{}'", sliced);
-                                if sliced.trim() == "Password:" {
-                                    tracing::debug!("sending password to helper");
-                                    stdin.write_all(pw.as_bytes()).await?;
-                                    stdin.write_all(b"\n").await?;
-                                }
-                            } else if let Some(info) = line.strip_prefix("PAM_TEXT_INFO") {
-                                let msg = info.trim().to_string();
-                                tracing::debug!("helper replied with info: {}", msg);
-
-                                if msg.contains("minute") && msg.contains("unlock") {
-                                    last_info = Some(msg.clone());
-                                    self.sender
-                                        .send(AuthenticationAgentEvent::AuthorizationRetry {
-                                            cookie: cookie.to_string(),
-                                            retry_message: Some(msg),
-                                        })
-                                        .await
-                                        .unwrap();
-                                }
-                            } else if line.starts_with("FAILURE") {
-                                tracing::debug!("helper replied with failure.");
-
-                                let retry_msg = last_info.clone().unwrap_or_else(|| {
-                                    "Authentication failed. Please try again.".to_string()
-                                });
-                                self.sender
-                                    .send(AuthenticationAgentEvent::AuthorizationRetry {
-                                        cookie: cookie.to_string(),
-                                        retry_message: Some(retry_msg),
-                                    })
-                                    .await
-                                    .unwrap();
-                                continue;
-                            } else if line.starts_with("SUCCESS") {
+                        match auth_result {
+                            Ok(AuthResult::Success) => {
                                 tracing::debug!("helper replied with success.");
-
                                 self.sender
                                     .send(AuthenticationAgentEvent::AuthorizationSucceeded {
                                         cookie: cookie.to_string(),
@@ -173,8 +209,29 @@ impl AuthenticationAgent {
                                     .unwrap();
                                 return Ok(());
                             }
+                            Ok(AuthResult::Retry(msg)) => {
+                                tracing::debug!("helper replied with failure.");
+                                self.sender
+                                    .send(AuthenticationAgentEvent::AuthorizationRetry {
+                                        cookie: cookie.to_string(),
+                                        retry_message: Some(msg),
+                                    })
+                                    .await
+                                    .unwrap();
+                                continue;
+                            }
+                            Err(e) => {
+                                tracing::error!("authentication error: {:?}", e);
+                                self.sender
+                                    .send(AuthenticationAgentEvent::AuthorizationRetry {
+                                        cookie: cookie.to_string(),
+                                        retry_message: Some("Authentication error. Please try again.".to_string()),
+                                    })
+                                    .await
+                                    .unwrap();
+                                continue;
+                            }
                         }
-                        stdin.flush().await?;
                     }
                 }
             }

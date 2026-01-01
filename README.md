@@ -79,7 +79,12 @@ Configuration files are stored in `~/.config/phylax/`.
 ```toml
 # Custom polkit helper path (only needed for non-standard locations)
 helper_path = "/usr/lib/polkit-1/polkit-agent-helper-1"
+
+# Socket path for polkit 127-3+ (Arch Linux)
+socket_path = "/run/polkit/agent-helper.socket"
 ```
+
+> **Note:** Arch Linux polkit 127-3 removed setuid from the authentication helper and switched to systemd socket activation. Phylax automatically uses the socket when available and falls back to the legacy helper spawn for older polkit versions.
 
 ### style.css
 
