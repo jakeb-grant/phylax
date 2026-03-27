@@ -3,6 +3,12 @@ name: Publish to AUR
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'PKGBUILD'
+      - 'build.rs'
   workflow_dispatch:
 
 jobs:

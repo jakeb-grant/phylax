@@ -2,9 +2,10 @@
 
 A Polkit authentication agent written in GTK4 for Arch Linux.
 
-![Rust](https://img.shields.io/badge/rust-1.85%2B-orange)
-![License](https://img.shields.io/badge/license-Apache--2.0-blue)
-![Arch Linux](https://img.shields.io/badge/Arch-Linux-1793D1?logo=arch-linux)
+[![AUR](https://img.shields.io/aur/version/phylax-git?label=AUR&logo=archlinux)](https://aur.archlinux.org/packages/phylax-git)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+
+Every Wayland compositor needs a polkit agent, and most of the options are either unmaintained GNOME leftovers or headless password prompts. Phylax is a minimal GTK4 dialog that just works — CSS-themeable, zeroizes passwords from memory, and handles the new socket-activated polkit on Arch out of the box.
 
 > Forked from [Soteria](https://github.com/imvaskel/soteria) by Vaskel.
 
