@@ -1,4 +1,4 @@
-# Phylax
+# phylax
 
 A Polkit authentication agent written in GTK4 for Arch Linux.
 
