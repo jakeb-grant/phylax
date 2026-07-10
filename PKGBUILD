@@ -1,14 +1,14 @@
 # Maintainer: jakeb-grant
 pkgname=phylax-git
-pkgver=r0.0000000
+pkgver=0.1.5.r2.g5779aaf
 pkgrel=1
 pkgdesc="A Polkit authentication agent written in GTK4"
 arch=('x86_64')
 url="https://github.com/jakeb-grant/phylax"
 license=('Apache-2.0')
-depends=('gtk4' 'polkit')
+depends=('gtk4>=4.10' 'glib2' 'polkit' 'libgcc' 'glibc')
 makedepends=('cargo' 'git')
-provides=('phylax' 'polkit-authentication-agent')
+provides=("phylax=$pkgver")
 conflicts=('phylax')
 source=("git+https://github.com/jakeb-grant/phylax.git")
 sha256sums=('SKIP')
