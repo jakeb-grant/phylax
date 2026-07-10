@@ -863,7 +863,7 @@ dependencies = [
 
 [[package]]
 name = "phylax"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "etc-passwd",
  "eyre",
